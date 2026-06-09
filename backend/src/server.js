@@ -1,4 +1,5 @@
 import express from 'express';
+import { fileURLToPath } from 'url';
 import notesRoutes from './routes/notesRoutes.js';
 import { connectDB } from './config/db.js';
 import ratelimit from './config/upstash.js';
@@ -10,13 +11,19 @@ import path from 'path';
 dotenv.config();
 const app  = express();
 const port = process.env.PORT || 5000;
-const __dirname = path.resolve();
-if(process.env.NODE_ENV !== "production") { 
-app.use(
-  cors( {
-    origin: 'http://localhost:5173', // Replace with your frontend URL
-  })   ); 
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+
+if (process.env.NODE_ENV === "production") {
+  app.use(express.static(path.join(__dirname, "../../frontend/dist")));
+
+  app.get("*", (req, res) => {
+    res.sendFile(path.join(__dirname, "../../frontend", "dist", "index.html"));
+  });
 }
+
 app.use(express.json()); // Middleware to parse JSON request bodies
 
 app.use(rateLimiter); // Apply the rate limiter middleware to all routes
@@ -28,10 +35,10 @@ app.use(rateLimiter); // Apply the rate limiter middleware to all routes
 
  app.use("/api/notes",notesRoutes);
 if (process.env.NODE_ENV === "production") {
-  app.use(express.static(path.join(__dirname, "frontend/dist")));
+  app.use(express.static(path.join(__dirname, "../../frontend/dist")));
 
   app.get("*", (req, res) => {
-    res.sendFile(path.join(__dirname, "frontend" , "dist", "index.html"));
+    res.sendFile(path.join(__dirname, "../../frontend", "dist", "index.html"));
   });
 }
 
